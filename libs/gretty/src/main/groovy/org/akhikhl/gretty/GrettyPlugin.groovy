@@ -182,23 +182,35 @@ class GrettyPlugin implements Plugin<Project> {
 
     if(project.tasks.findByName('classes')) { // JVM project?
 
-      project.task('prepareInplaceWebAppFolder', group: 'gretty') {
-        description = 'Copies webAppDir of this web-app and all overlays (if any) to ${buildDir}/inplaceWebapp'
-        def getInplaceMode = {
-            project.tasks.findByName('appRun').effectiveInplaceMode
-        }
-        inputs.dir ProjectUtils.getWebAppDir(project)
-        // We should track changes in inplaceMode value or plugin would show UP-TO-DATE for this task
-        // even if inplaceMode was changed
-        inputs.property('inplaceMode', getInplaceMode)
-        outputs.dir "${project.buildDir}/inplaceWebapp"
-        doLast {
-            if(getInplaceMode() != 'hard') {
-                // Skipping this task for hard inplaceMode.
-                ProjectUtils.prepareInplaceWebAppFolder(project)
-            }
-        }
+      def description = 'Copies webAppDir of this web-app and all overlays (if any) to ${buildDir}/inplaceWebapp'
+      def inputDir = ProjectUtils.getWebAppDir(project)
+      def outputDir = project.file("${project.buildDir}/inplaceWebapp")
+      def getInplaceMode = { project.tasks.findByName('appRun').effectiveInplaceMode }
 
+      if(GradleUtils.incrementalTaskSupported) {
+        project.task('prepareInplaceWebAppFolder', group: 'gretty', type: PrepareInplaceWebAppFolderTask) {
+          it.description = description
+          it.inputDir = inputDir
+          it.outputDir = outputDir
+          // We should track changes in inplaceMode value or plugin would show UP-TO-DATE for this task
+          // even if inplaceMode was changed
+          it.inplaceMode = getInplaceMode
+        }
+      } else {
+        project.task('prepareInplaceWebAppFolder', group: 'gretty') {
+          it.description = description
+          inputs.dir inputDir
+          // We should track changes in inplaceMode value or plugin would show UP-TO-DATE for this task
+          // even if inplaceMode was changed
+          inputs.property('inplaceMode', getInplaceMode)
+          outputs.dir outputDir
+          doLast {
+            if (getInplaceMode() != 'hard') {
+              // Skipping this task for hard inplaceMode.
+              ProjectUtils.prepareInplaceWebAppFolder(project)
+            }
+          }
+        }
       }
 
       project.task('prepareInplaceWebAppClasses', group: 'gretty') {

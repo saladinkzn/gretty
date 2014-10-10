@@ -42,5 +42,18 @@ class GradleUtils {
         proj.tasks[taskName].enabled = false
     }
   }
+
+  private static final boolean IS_INCREMENTAL_TASK_SUPPORTED
+  static {
+    try {
+      Class<?> clazz = Class.forName('org.gradle.api.tasks.incremental.IncrementalTaskInputs')
+      IS_INCREMENTAL_TASK_SUPPORTED = true
+    } catch (LinkageError | ClassNotFoundException cnfe) {
+      IS_INCREMENTAL_TASK_SUPPORTED = false
+    }
+  }
+  static boolean isIncrementalTaskSupported() {
+    return IS_INCREMENTAL_TASK_SUPPORTED
+  }
 }
 
