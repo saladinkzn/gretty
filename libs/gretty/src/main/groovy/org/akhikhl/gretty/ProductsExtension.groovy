@@ -14,7 +14,7 @@ package org.akhikhl.gretty
  */
 class ProductsExtension {
 
-  Map productsMap = [:]
+  Map<String, ProductExtension> productsMap = [:]
 
   void product(String name = null, Closure closure) {
     if(name == null)

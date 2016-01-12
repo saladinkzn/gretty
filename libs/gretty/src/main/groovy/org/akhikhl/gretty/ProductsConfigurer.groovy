@@ -32,7 +32,8 @@ final class ProductsConfigurer {
       description = 'Archives all configured gretty products.'
     }
     project.products.productsMap.each { productName, product ->
-      new ProductConfigurer(project, outputDir, productName, product).configureProduct()
+      def productConfigurer = new ProductConfigurer((Project) project, outputDir, productName, (ProductExtension) product)
+      productConfigurer.configureProduct()
     }
   }
 }

@@ -1,0 +1,33 @@
+buildscript {
+  repositories {
+    mavenLocal()
+    jcenter()
+    maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local' }
+  }
+
+  dependencies {
+    classpath "ru.shadam.gretty:gretty:$gretty_version"
+//    classpath "org.akhikhl.gretty:gretty:$gretty_version"
+  }
+}
+
+repositories {
+  mavenLocal()
+  jcenter()
+  maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local' }
+}
+
+apply plugin: 'org.akhikhl.gretty'
+apply plugin: 'war'
+
+project.ext {
+  jetty9version = '9.3.6.v20151106'
+}
+
+gretty {
+  servletContainer = 'jetty9'
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.10'
+}

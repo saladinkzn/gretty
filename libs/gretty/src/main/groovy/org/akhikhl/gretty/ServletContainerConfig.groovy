@@ -95,6 +95,17 @@ class ServletContainerConfig {
         servletContainerRunnerConfig: 'grettyRunnerJetty9',
         servletContainerRunnerDependencies: { project ->
           project.dependencies.add servletContainerRunnerConfig, "org.akhikhl.gretty:gretty-runner-jetty9:$grettyVersion"
+          log.error("project.jetty9Version = ${project.jetty9Version}")
+          if(project.jetty9Version != jetty9Version) {
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-server:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-servlet:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-webapp:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-security:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-jsp:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-annotations:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty:jetty-plus:${project.jetty9Version}"
+            project.dependencies.add servletContainerRunnerConfig,  "org.eclipse.jetty.websocket:javax-websocket-server-impl:${project.jetty9Version}"
+          }
           addRedirectFilter(project, servletContainerRunnerConfig)
         },
         servletApiVersion: jetty9ServletApiVersion,
