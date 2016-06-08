@@ -18,9 +18,9 @@ class FarmConfigurerUtil {
 
   static File resolveWebAppRefToWarFile(Project project, webAppRef) {
     File warFile = webAppRef instanceof File ? webAppRef : new File(webAppRef.toString())
-    if((!warFile.isFile()) && !warFile.isAbsolute())
+    if(!warFile.isAbsolute())
       warFile = new File(project.projectDir, warFile.path)
-    (warFile.isFile()) ? warFile.absoluteFile : null
+    warFile.absoluteFile
   }
 
   static Tuple resolveWebAppType(Project project, suppressMavenToProjectResolution, wref) {
