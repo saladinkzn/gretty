@@ -210,14 +210,7 @@ class GrettyPlugin implements Plugin<Project> {
           def type = typeAndResult[0]
           if(type in [FarmWebappType.WAR_FILE, FarmWebappType.WAR_DEPENDENCY]) {
             if (options.overlays) {
-              def warFile
-              if (type == FarmWebappType.WAR_FILE) {
-                warFile = typeAndResult[1]
-              } else if (type == FarmWebappType.WAR_DEPENDENCY) {
-                warFile = ProjectUtils.getFileFromConfiguration(project, ProjectUtils.getFarmConfigurationName(farmName), typeAndResult[1])
-              }
-
-              def warFileName = warFile.name
+              def warFileName = getWarFileName(typeAndResult, wref)
               def farmOverlayArchive = project.tasks.findByName("farmOverlayArchive${farmName}${warFileName}")
               task.dependsOn farmOverlayArchive
             }
@@ -551,33 +544,39 @@ class GrettyPlugin implements Plugin<Project> {
             if (overlays) {
               log.info("Farm {} contains webapp {} with overlays: {}", fname, wref, options.overlays)
 
-              def warFile
-              if(type == FarmWebappType.WAR_FILE) {
-                warFile = typeAndResult[1]
-              } else if (type == FarmWebappType.WAR_DEPENDENCY) {
-                warFile = ProjectUtils.getFileFromConfiguration(project, ProjectUtils.getFarmConfigurationName(fname), typeAndResult[1])
-              }
+              def warFileName = getWarFileName(typeAndResult, wref)
 
-              def outputFolder = Paths.get(project.buildDir.absolutePath, 'farms', fname, 'explodedWebapps', FilenameUtils.removeExtension(warFile.name)).toFile()
+              def outputFolder = Paths.get(project.buildDir.absolutePath, 'farms', fname, 'explodedWebapps', FilenameUtils.removeExtension(warFileName)).toFile()
               def outputFolderPath = outputFolder.absolutePath
 
-              def explodeWebappTask = project.task("farmExplodeWebapp$fname${warFile.name}", group: 'gretty') {
-                description = 'Explode webapp and all overlays into ${buildDir}/farms/${fname}/explodedWebapps/${wref}'
-                for(String overlay in overlays) {
-                  dependsOn "$overlay:assemble" as  String
+              def explodeWebappTask = project.task("farmExplodeWebapp$fname${warFileName}", group: 'gretty') {
+                def warFile
+                if(type == FarmWebappType.WAR_FILE) {
+                  warFile = typeAndResult[1]
                 }
-                for(String overlay in overlays)
-                  inputs.file { ProjectUtils.getFinalArchivePath(project.project(overlay)) }
-                inputs.file warFile
+                description = 'Explode webapp and all overlays into ${buildDir}/farms/${fname}/explodedWebapps/${wref}'
+                overlays.each { String overlay ->
+                  dependsOn "$overlay:assemble" as String
+                  inputs.file {
+                    ProjectUtils.getFinalArchivePath(project.project(overlay))
+                  }
+                }
+                //
+                if(warFile) {
+                  inputs.file warFile
+                }
                 outputs.dir outputFolder
                 doLast {
+                  if (type == FarmWebappType.WAR_DEPENDENCY) {
+                    warFile = ProjectUtils.getFileFromConfiguration(project, ProjectUtils.getFarmConfigurationName(fname), typeAndResult[1])
+                  }
                   ProjectUtils.prepareExplodedFarmWebAppFolder(project, warFile, overlays, outputFolderPath)
                 }
               }
 
               // TODO: gradle way of doing this?
-              def repackagedArchive = Paths.get(project.buildDir.absolutePath, 'farms', fname, 'explodedWebapps', warFile.name).toFile().absolutePath
-              def archiveWebappTask = project.task("farmOverlayArchive$fname${warFile.name}", group: 'gretty') {
+              def repackagedArchive = Paths.get(project.buildDir.absolutePath, 'farms', fname, 'explodedWebapps', warFileName).toFile().absolutePath
+              def archiveWebappTask = project.task("farmOverlayArchive$fname${warFileName}", group: 'gretty') {
                 description = 'Creates archive from exploded web-app in ${buildDir}/farms/${fname}/explodedWebapps/${wref}'
                 dependsOn explodeWebappTask
                 inputs.dir outputFolder
@@ -688,6 +687,16 @@ class GrettyPlugin implements Plugin<Project> {
         farmName = fname
       }
     } // farmsMap
+  }
+
+  private static def getWarFileName(Tuple type, wref) {
+    def warFileName
+    if (type[0] == FarmWebappType.WAR_FILE) {
+      warFileName = type[1].name
+    } else if (type[0] == FarmWebappType.WAR_DEPENDENCY) {
+      warFileName = wref.split(':')[1] + '.war'
+    }
+    warFileName
   } // addTasks
 
   private void afterProjectEvaluate(Project project) {

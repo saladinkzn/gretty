@@ -19,11 +19,16 @@ repositories {
 apply plugin: 'war'
 apply plugin: 'org.akhikhl.gretty'
 apply from: rootProject.file('integrationTests.gradle')
+apply from: 'publish.gradle'
 
 gretty {
   contextPath = '/helloGrettyOverlay'
   overlay ':helloGretty'
   servletContainer = 'jetty7'
+}
+
+war {
+  archiveName 'helloGrettyOverlay.war'
 }
 
 rootProject.tasks.testAll.dependsOn { project.tasks.integrationTestAllContainers }
